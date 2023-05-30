@@ -113,10 +113,19 @@ class Trainer():
         model.save_pretrained(f"{self.output_dir}/dist", state_dict=model_state)
 
     def _save(self, no_dist=False):
-        self.accelerator.wait_for_everyone() 
+        self.accelerator.wait_for_everyone()
+        # Check if the checkpoint directory already exists
+        checkpoint_dir = f"{self.output_dir}/checkpoints/checkpoint_{self.accelerator.project_configuration.iteration}"
+        while os.path.exists(checkpoint_dir):
+            # If it exists, increment the iteration number
+            self.accelerator.project_configuration.iteration += 1
+            checkpoint_dir = f"{self.output_dir}/checkpoints/checkpoint_{self.accelerator.project_configuration.iteration}"
+        
+        # Now, save the checkpoint
         self.accelerator.save_state()
         if not no_dist:
             self._save_dist()
+
 
     def _train_accelerate(self, epochs=1, max_steps=None):
         context_manager =  contextlib.nullcontext()
